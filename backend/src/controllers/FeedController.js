@@ -3,13 +3,10 @@ import User from '../models/User.js';
 
 export const getUserFeed = async (req, res) => {
   try {
-    const currentUserId = req.user._id;
-    const { page = 1, limit = 10 } = req.query; // Pagination parameters
+    const currentUserId = req.user._id.toString();
+    const { page = 1, limit = 10 } = req.query;
 
-    // Step 1: Get the list of users the current user follows
-    const currentUser = await User.findById(currentUserId).populate(
-      'following'
-    );
+    const currentUser = await User.findById(currentUserId).select('following');
     if (!currentUser) {
       return res.status(404).json({
         success: false,
@@ -17,25 +14,27 @@ export const getUserFeed = async (req, res) => {
       });
     }
 
-    // Get an array of user IDs from the 'following' field
-    const followingIds = currentUser.following.map((user) => user._id);
+    const followingIds = currentUser.following.map((id) => id.toString());
 
-    // Step 2: Fetch posts from users they follow
     const posts = await Post.find({
-      author: { $in: followingIds }, // Only posts from followed users
-      visibility: { $in: ['public', 'followers'] }, // Only public or followers-only posts
+      $or: [
+        { author: currentUserId }, // always include own posts
+        {
+          author: { $in: followingIds },
+          visibility: { $in: ['public', 'followers'] },
+        },
+      ],
     })
-      .populate('author', 'name username ProfilePicURL') // Include author details
-      .sort({ createdAt: -1 }) // Latest posts first
-      .skip((page - 1) * limit) // Pagination: skip previous pages
-      .limit(limit); // Limit the number of posts per page
+      .populate('author', 'name username ProfilePicURL')
+      .sort({ createdAt: -1 })
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .limit(parseInt(limit));
 
-    // Step 3: Return the posts
     res.status(200).json({
       success: true,
       posts,
-      page,
-      limit,
+      page: parseInt(page),
+      limit: parseInt(limit),
       totalPosts: posts.length,
     });
   } catch (error) {
@@ -43,6 +42,35 @@ export const getUserFeed = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching feed',
+      error: error.message,
+    });
+  }
+};
+
+export const getAllPosts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const posts = await Post.find()
+      .populate('author', 'name username ProfilePicURL')
+      .sort({ createdAt: -1 }) // latest posts first
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .limit(parseInt(limit));
+
+    const total = await Post.countDocuments();
+
+    res.status(200).json({
+      success: true,
+      posts,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPosts: total,
+    });
+  } catch (error) {
+    console.error('Error fetching all posts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching all posts',
       error: error.message,
     });
   }

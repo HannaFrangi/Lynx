@@ -8,20 +8,33 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Modified this line
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import styles from '../../assets/Styles/login.styles';
 import COLORS from '../../constants/colors';
 import { Link } from 'expo-router';
+import { toast } from 'sonner-native';
+import { useAuthStore } from '../../store/authStore';
 
-// ...existing code...
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { isLoading, login } = useAuthStore();
 
-  const handleLogin = () => {};
+  const handleLogin = async () => {
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        toast.success('Welcome Back!', 5000);
+        // router.replace('/');
+      } else {
+        toast.error(result.error);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -40,7 +53,7 @@ export default function Login() {
           <View style={styles.formContainer}>
             {/* Email */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>Username Or Mail</Text>
               <View style={styles.inputContainer}>
                 <Ionicons
                   name='mail-outline'
@@ -50,7 +63,7 @@ export default function Login() {
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder='Enter Your Email'
+                  placeholder='Enter Your Username Or Mail'
                   placeholderTextColor={COLORS.placeholderText}
                   value={email}
                   onChangeText={setEmail}

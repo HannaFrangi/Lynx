@@ -3,18 +3,17 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import React, { useState } from 'react';
 import styles from '../../assets/Styles/signup.styles';
 import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../../constants/colors';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
+import { toast } from 'sonner-native';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -25,18 +24,19 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const { user, isLoading, register } = useAuthStore();
+  const { isLoading, register } = useAuthStore();
 
   const handleSignup = async () => {
     try {
       const result = await register(username, name, email, password);
       if (result.success) {
+        toast.success('Welcome In!', 5000);
         router.replace('/');
       } else {
-        Alert.alert('Error', result.error);
+        toast.error(result.error);
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      toast.error(error.message);
     }
   };
 
@@ -192,7 +192,7 @@ export default function Signup() {
                 {isLoading ? (
                   <ActivityIndicator color={'#fff'} />
                 ) : (
-                  <Text style={styles.link}>Sign Up</Text>
+                  <Text style={styles.link}>Login</Text>
                 )}
               </TouchableOpacity>
             </View>
