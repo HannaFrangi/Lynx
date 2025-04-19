@@ -75,7 +75,8 @@ const userSchema = new mongoose.Schema(
       enum: [
         'google',
         'apple',
-        'signUp Mobile',
+        'signUp Mobile Android',
+        'signUp Mobile IOS',
         'signUp Website',
         'GitHub',
         'postman',
